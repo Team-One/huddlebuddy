@@ -4,14 +4,11 @@
  * Released under the MIT license. See LICENSE file for details.
  */
 
-var mqtt = require('mqtt');
 var socket = require('socket.io');
-var firmata = require('firmata');
-
+var mqtt = require('mqtt');
+var io = socket.listen(3000);
 var mqttbroker = 'localhost';
 var mqttport = 1883;
-
-var io = socket.listen(3000);
 var mqttclient = mqtt.createClient(mqttport, mqttbroker);
 
 // Reduce socket.io debug output
