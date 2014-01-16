@@ -18,16 +18,12 @@
         var socket = io.connect('http://localhost:3000');
             socket.on('connect', function () {
                 socket.on('mqtt', function (msg) {
-                    var message = msg.topic.split('/');
-                    var area = message[1];
-                    var state = message[2];
-                    //console.log(msg.topic, msg.payload);
+                    var message = msg.topic;
                     var timestamp = Math.round((new Date()).getTime() / 1000);
-
                     $('#topic').html(msg.topic);
                     $('#message').html(msg.topic + ', ' + msg.payload);
-                    switch (area) {
-                        case 'huddle1': 
+                    
+                        
                             $('#value1').html('(Switch value: ' + msg.payload + ')');
                             if (msg.payload == 'true') {
                                 $('#label1').text('Occupied');
@@ -36,12 +32,8 @@
                                 $('#label1').text('Vacant');
                                 $('#label1').removeClass('label-success').addClass('label-danger');
                             }
-                            break;
-                        
-                        default: console.log('Error: Data do not match the MQTT topic.'); break;
-                    }
          });
-         socket.emit('subscribe', {topic : 'home/#'});
+         socket.emit('subscribe', {topic : 'huddle1/#'});
         });
     </script>
 
