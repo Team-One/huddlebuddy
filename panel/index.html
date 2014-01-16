@@ -6,7 +6,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Home conditions</title>
+    <title>Huddle Rooms</title>
 
     <!-- Bootstrap core CSS -->
     <link href="css/bootstrap.css" rel="stylesheet">
@@ -15,8 +15,6 @@
     <!-- socket.io for communication -->    
     <script type="text/javascript" src="js/socket.io.min.js"></script>
     <script type="text/javascript">
-        var livingTemp = new Array();
-        var basementTemp = new Array();
         var socket = io.connect('http://localhost:3000');
             socket.on('connect', function () {
                 socket.on('mqtt', function (msg) {
@@ -29,13 +27,13 @@
                     $('#topic').html(msg.topic);
                     $('#message').html(msg.topic + ', ' + msg.payload);
                     switch (area) {
-                        case 'front': 
+                        case 'huddle1': 
                             $('#value1').html('(Switch value: ' + msg.payload + ')');
                             if (msg.payload == 'true') {
-                                $('#label1').text('Closed');
+                                $('#label1').text('Occupied');
                                 $('#label1').removeClass('label-danger').addClass('label-success');
                             } else {
-                                $('#label1').text('Open');
+                                $('#label1').text('Vacant');
                                 $('#label1').removeClass('label-success').addClass('label-danger');
                             }
                             break;
@@ -57,7 +55,6 @@
             <div class="panel panel-default">
               <div class="panel-body">
                     <table class="table table-striped">
-                        <!-- Entrace door -->
                         <tr>
                         <td width="40%" style="vertical-align:middle;"><h3>Huddle 1</h3><small id="value1">(no value recieved)</small></td>
                         <td style="vertical-align:middle;"></td>
@@ -72,6 +69,6 @@
                     <b>Latest MQTT message:  </b> <small id="message">no message recieved</small>
             </div>
           </div>
-          
+
   </body>
 </html>
