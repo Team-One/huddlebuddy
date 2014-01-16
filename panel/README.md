@@ -39,7 +39,7 @@ $ sudo yum -y install node npm mosquitto-python
 then
 
 ```
-$ npm install mqtt socket.io
+$ npm install
 ```
 
 ### MQTT broker/server
