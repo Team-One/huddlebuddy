@@ -89,7 +89,6 @@
         });
         var socket = io.connect('http://solr.t1p1.com:3000');
         socket.on('connect', function () {
-          console.log("Connected");
             $(".users ul").html("");
             socket.emit('subscribe', {topic : 'rooms/#'});
         });
