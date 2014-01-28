@@ -17,7 +17,7 @@ var mqttport = 1883;
 var mqttclient = mqtt.createClient(mqttport, mqttbroker);
 
 // Reduce socket.io debug output
-io.set('log level', 1)
+io.set('log level', 0)
 
 // Subscribe to topic
 io.sockets.on('connection', function (socket) {
@@ -26,6 +26,12 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('checkIn', function (data) {
         db.checkins.save({room:data.room,user:data.user});
+        io.sockets.emit('checkin',
+	        {'room'  : data.room,
+	         'user' : data.user,
+	         'client_id' : data.client_id
+	        }
+	    );
     });
     
     db.rooms.find({},function (err,result) {
@@ -51,7 +57,7 @@ io.sockets.on('connection', function (socket) {
 // Push the message to socket.io
 mqttclient.on('message', function(topic, payload) {
 	var room = topic.split("/")[1];
-	if(payload == false) {
+	if(payload == "false") {
 		// Wipe the room
 		db.checkins.remove({room: room});
 	}

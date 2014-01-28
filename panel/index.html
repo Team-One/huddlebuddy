@@ -20,6 +20,7 @@
         var lastVal = "";
         var roomStats = {};
         var findCache;
+        var client_id = Math.random().toString(36).slice(2);
         $(function() {
           var hLen = huddlerooms.length;
           var buildHTML = "";
@@ -45,7 +46,7 @@
             e.preventDefault();
             var room = $("#room").val();
             var user = $("#name").val();
-            socket.emit('checkIn', {room : room, user: user});
+            socket.emit('checkIn', {room : room, user: user, client_id: client_id});
             $("#room-"+room+" .users ul").append("<li>"+user+"</li>");
           });
           var $namesParent = $("#name").parent();
@@ -88,7 +89,11 @@
         });
         var socket = io.connect('http://solr.t1p1.com:3000');
         socket.on('connect', function () {
-            socket.on('mqtt', function (msg) {
+          console.log("Connected");
+            $(".users ul").html("");
+            socket.emit('subscribe', {topic : 'rooms/#'});
+        });
+        socket.on('mqtt', function (msg) {
                 var message = msg.topic;
                 var timestamp = Math.round((new Date()).getTime() / 1000);
                 $('#topic').html(msg.topic);
@@ -99,11 +104,14 @@
                     $('#room-'+msg.topic+' .label').text('Occupied');
                     $('#room-'+msg.topic+' .label').removeClass('label-danger').addClass('label-success');
                 } else {
+                    $("#room-"+msg.topic+" .users ul").html("");
                     $('#room-'+msg.topic+' .label').text('Vacant');
                     $('#room-'+msg.topic+' .label').removeClass('label-success').addClass('label-danger');
                 }
             });
-            socket.emit('subscribe', {topic : 'rooms/#'});
+        socket.on('checkin', function (msg) {
+          if(msg.client_id != client_id)
+          $("#room-"+msg.room+" .users ul").append("<li>"+msg.user+"</li>");
         });
     </script>
     <style>
