@@ -47,7 +47,7 @@
             var room = $("#room").val();
             var user = $("#name").val();
             socket.emit('checkIn', {room : room, user: user, client_id: client_id});
-            $("#room-"+room+" .users ul").append("<li>"+user+"</li>");
+            $("#room-"+room+" .users ul").append("<li>"+sanitize(user)+"</li>");
           });
           var $namesParent = $("#name").parent();
           $namesParent.append('<ul class="filterResults"></ul>');
@@ -110,8 +110,11 @@
             });
         socket.on('checkin', function (msg) {
           if(msg.client_id != client_id)
-          $("#room-"+msg.room+" .users ul").append("<li>"+msg.user+"</li>");
+          $("#room-"+msg.room+" .users ul").append("<li>"+sanitize(msg.user)+"</li>");
         });
+    function sanitize(input) {
+      return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
     </script>
     <style>
       .searchBox {

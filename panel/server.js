@@ -7,7 +7,7 @@
 var socket = require('socket.io');
 var mqtt = require('mqtt');
 var databaseUrl = "huddlebuddy";
-var collections = ["checkins","rooms"];
+var collections = ["checkins","rooms","logs"];
 var db = require("mongojs").connect(databaseUrl, collections);
 var io = socket.listen(3000);
 var mqttbroker = 'localhost';
@@ -26,6 +26,7 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('checkIn', function (data) {
         db.checkins.save({room:data.room,user:data.user});
+        db.logs.insert({type:"check_in", room: data.room, user: data.user});
         io.sockets.emit('checkin',
 	        {'room'  : data.room,
 	         'user' : data.user,
@@ -61,6 +62,7 @@ mqttclient.on('message', function(topic, payload) {
 		// Wipe the room
 		db.checkins.remove({room: room});
 	}
+    db.logs.insert({type:"room_update",room: room, status: payload});
 	db.rooms.update({room: room}, {$set:{status:payload}}, {upsert:true});
     io.sockets.emit('mqtt',
         {'topic'  : room,
