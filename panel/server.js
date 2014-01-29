@@ -68,10 +68,9 @@ io.sockets.on('connection', function (socket) {
         db.checkins.insert({room:data.room,user:data.user, time: time});
         var time = Math.round(Date.now()/1000);
         db.logs.insert({type:"check_in", room: data.room, user: data.user, time: time});
-        io.sockets.emit('checkin',
+        socket.broadcast.emit('checkin',
             {'room'  : data.room,
-             'user' : data.user,
-             'client_id' : data.client_id
+             'user' : data.user
             }
         );
         mqttclient.publish('rooms/'+data.room, 'true');
@@ -79,7 +78,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('requestLogs', function (data) {
         var pastDay = Math.round(Date.now()/1000)-86400;
         db.logs.find({time : {$gt:pastDay}}, function(err,result) {
-            io.sockets.socket(socket.id).emit('logs',
+            socket.emit('logs',
                 result
             );
         });

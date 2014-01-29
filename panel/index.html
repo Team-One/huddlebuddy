@@ -20,7 +20,6 @@
         var lastVal = "";
         var roomStats = {};
         var findCache;
-        var client_id = Math.random().toString(36).slice(2);
         $(function() {
           var hLen = huddlerooms.length;
           var buildHTML = "";
@@ -46,7 +45,7 @@
             e.preventDefault();
             var room = $("#room").val();
             var user = $("#name").val();
-            socket.emit('checkIn', {room : room, user: user, client_id: client_id});
+            socket.emit('checkIn', {room : room, user: user});
             $("#room-"+room+" .users ul").append("<li>"+sanitize(user)+"</li>");
           });
           var $namesParent = $("#name").parent();
@@ -112,7 +111,6 @@
                 }
             });
         socket.on('checkin', function (msg) {
-          if(msg.client_id != client_id)
           $("#room-"+msg.room+" .users ul").append("<li>"+sanitize(msg.user)+"</li>");
         });
     function sanitize(input) {
