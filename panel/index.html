@@ -96,16 +96,19 @@
                 var message = msg.topic;
                 var timestamp = Math.round((new Date()).getTime() / 1000);
                 $('#topic').html(msg.topic);
-                $('#message').html(msg.topic + ', ' + msg.payload);
+                $('#message').html(msg.topic + ', ' + msg.flag);
                 
-                $('#room-'+msg.topic+' .log').html('(Switch value: ' + msg.payload + ')');
-                if (msg.payload == 'true') {
+                $('#room-'+msg.topic+' .log').html('(Switch value: ' + msg.flag + ')');
+                if (msg.flag == 2) {
                     $('#room-'+msg.topic+' .label').text('Occupied');
-                    $('#room-'+msg.topic+' .label').removeClass('label-danger').addClass('label-success');
+                    $('#room-'+msg.topic+' .label').removeClass('label-warning label-danger').addClass('label-success');
+                } else if(msg.flag == 1) {
+                    $('#room-'+msg.topic+' .label').text('Purgatory');
+                    $('#room-'+msg.topic+' .label').removeClass('label-danger label-success').addClass('label-warning');
                 } else {
                     $("#room-"+msg.topic+" .users ul").html("");
                     $('#room-'+msg.topic+' .label').text('Vacant');
-                    $('#room-'+msg.topic+' .label').removeClass('label-success').addClass('label-danger');
+                    $('#room-'+msg.topic+' .label').removeClass('label-warning label-success').addClass('label-danger');
                 }
             });
         socket.on('checkin', function (msg) {

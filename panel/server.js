@@ -19,14 +19,51 @@ var mqttclient = mqtt.createClient(mqttport, mqttbroker);
 // Reduce socket.io debug output
 io.set('log level', 0)
 
+// Application loop to check for vacant rooms
+function app_loop(){
+   setTimeout(function(){
+        var time = Math.round(Date.now()/1000);
+        db.rooms.find({}, function(err,result) {
+            result.forEach(function(err,room){
+                if(time - result[room].time > 600) {
+                    updateRoom(result[room].room, 0);
+                } else if(time - result[room].time > 300) {
+                    updateRoom(result[room].room, 1);
+                }
+            });
+        });
+        app_loop();
+   }, 60000);
+}
+app_loop();
+
+function updateRoom(room, flag) {
+    if(flag == 0) {
+        // Wipe the checkins
+        db.checkins.remove({room: room});
+    }
+    var time = Math.round(Date.now()/1000);
+    db.logs.insert({type:"room_update",room: room, flag: flag, time: time});
+    if(flag == 2) 
+        db.rooms.update({room: room}, {$set:{flag:flag, time: time}}, {upsert:true});
+    else
+        db.rooms.update({room: room}, {$set:{flag:flag}}, {upsert:true});
+    io.sockets.emit('mqtt',
+        {'topic'  : room,
+         'flag' : flag
+        }
+    );
+}
+
 // Subscribe to topic
 io.sockets.on('connection', function (socket) {
     socket.on('subscribe', function (data) {
         mqttclient.subscribe(data.topic);
     });
     socket.on('checkIn', function (data) {
-        db.checkins.save({room:data.room,user:data.user});
-        db.logs.insert({type:"check_in", room: data.room, user: data.user});
+        db.checkins.insert({room:data.room,user:data.user, time: time});
+        var time = Math.round(Date.now()/1000);
+        db.logs.insert({type:"check_in", room: data.room, user: data.user, time: time});
         io.sockets.emit('checkin',
 	        {'room'  : data.room,
 	         'user' : data.user,
@@ -39,7 +76,7 @@ io.sockets.on('connection', function (socket) {
     	result.forEach(function(err,room){
     		io.sockets.emit('mqtt',
 		        {'topic'  : result[room].room,
-		         'payload' : result[room].status
+		         'flag' : result[room].flag
 		        }
 		    );
     	});
@@ -59,14 +96,10 @@ io.sockets.on('connection', function (socket) {
 mqttclient.on('message', function(topic, payload) {
 	var room = topic.split("/")[1];
 	if(payload == "false") {
-		// Wipe the room
-		db.checkins.remove({room: room});
-	}
-    db.logs.insert({type:"room_update",room: room, status: payload});
-	db.rooms.update({room: room}, {$set:{status:payload}}, {upsert:true});
-    io.sockets.emit('mqtt',
-        {'topic'  : room,
-         'payload' : payload
-        }
-    );
+        // This is just kept for testing
+        var flag = 0;
+	} else {
+        var flag = 2;
+    }
+    updateRoom(room, flag);
 });
