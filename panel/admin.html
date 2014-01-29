@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Huddle Rooms</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+    <!-- socket.io for communication -->    
+    <script type="text/javascript" src="js/socket.io.min.js"></script>
+    <script type="text/javascript">
+        var huddlerooms = [1,2];
+        var socket = io.connect('http://solr.t1p1.com:3000');
+        socket.on('connect', function () {
+          socket.emit("requestLogs");
+        });
+        socket.on('logs', function (msg) {
+          var logLen = msg.length;
+          var buildHTML = "";
+          for(var i = 0; i< logLen; ++i) {
+            if(msg[i].type == "check_in") {
+              buildHTML += '<tr><td>'+msg[i].type+'</td><td>'+msg[i].room+'</td><td>'+msg[i].user+'</td><td>'+convertTime(msg[i].time)+'</td></tr>';
+            } else if(msg[i].type == "room_update") {
+              buildHTML += '<tr><td>'+msg[i].type+'</td><td>'+msg[i].room+'</td><td>'+msg[i].flag+'</td><td>'+convertTime(msg[i].time)+'</td></tr>';
+            }
+          }
+          $("#logs").append(buildHTML);
+        });
+    function convertTime(timestamp) {
+      var date = new Date(timestamp * 1000)
+      , datevalues = [
+             date.getFullYear()
+            ,date.getMonth()+1
+            ,date.getDate()
+            ,date.getHours()
+            ,date.getMinutes()
+            ,date.getSeconds()
+         ];
+      return datevalues[1]+'/'+datevalues[2]+'/'+datevalues[0]+' '+datevalues[3]+':'+datevalues[4]+':'+datevalues[5];
+    }
+    function sanitize(input) {
+      return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
+    </script>
+  </head>
+
+  <body>
+    <div id="wrap">
+      <div class="container">
+        <div class="page-header"><h1><b>Huddle Rooms</b></h1></div>
+            <div class="panel">
+            <div class="panel panel-default">
+              <div class="panel-body">
+                    <table id="logs" class="table table-striped">
+                      <tr><th>Type</th><th>Room</th><th>Data</th><th>Time</th></tr>
+                    </table>
+              </div>
+            </div>
+          <div class="panel panel-default">
+            <div class="panel-body">
+                    <b>Latest MQTT message:  </b> <small id="message">no message recieved</small>
+            </div>
+          </div>
+
+  </body>
+</html>
