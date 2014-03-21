@@ -16,21 +16,43 @@
     <script type="text/javascript" src="js/socket.io.min.js"></script>
     <script type="text/javascript">
         var users;
+        var roomStart = 10;
         var huddlerooms = [1,2];
+        for(var roomStart = 10;roomStart<=40;++roomStart) {
+          huddlerooms.push(roomStart);
+        }
         var lastVal = "";
-        var roomStats = {};
         var findCache;
+        function buildRooms(rooms) {
+          var huddlerooms = [1,2];
+          var buildHTML = "";
+          var features = "";
+          for(var total=rooms.rooms.length, i = 0;i < total;++i) {
+            huddlerooms.push({
+              id: rooms.rooms[i].internal_name,
+              name: rooms.rooms[i].display_name
+            });
+            if(rooms.rooms[i].override) {
+              features = "<li>"+rooms.rooms[i].override.join("</li><li>")+"</li>";
+            } else {
+              features = "<li>"+rooms.categories[rooms.rooms[i].category_id].features.join("</li><li>")+"</li>";
+            }
+            buildHTML += '<tr id="room-'+rooms.rooms[i].internal_name+'" class="category-'+rooms.rooms[i].category_id+'"><td width="20%" style="vertical-align:middle;"><h3>'+rooms.rooms[i].display_name+' - '+rooms.categories[rooms.rooms[i].category_id].display_name+'</h3><small class="log">(no value recieved)</small></td><td width="30%" class="features" style="vertical-align:middle;"><ul>'+features+'</ul></td><td class="users" style="vertical-align:middle;"><ul></ul></td><td width="30%" style="vertical-align:middle;"><h4>&nbsp;<span class="label">Unknown</span></h4></td></tr>';
+          }
+          $("#rooms").append(buildHTML);
+        }
         $(function() {
           var hLen = huddlerooms.length;
           var buildHTML = "";
-          for(var i = 0;i<hLen;++i) {
-            roomStats[huddlerooms[i]] = {
-              'status': false,
-              'occupants' : []
+          // Get rooms json and populate HTML
+          $.ajax({
+            url: 'rooms.json',
+            async: false,
+            dataType: 'json',
+            success: function (response) {
+              buildRooms(response);
             }
-            buildHTML += '<tr id="room-'+huddlerooms[i]+'"><td width="40%" style="vertical-align:middle;"><h3>'+huddlerooms[i]+'</h3><small class="log">(no value recieved)</small></td><td class="users" style="vertical-align:middle;"><ul></ul></td><td width="30%" style="vertical-align:middle;"><h4>&nbsp;<span class="label">Unknown</span></h4></td></tr>';
-          }
-          $("#rooms").append(buildHTML);
+          });
           // Get the users
           $.ajax({
             url: 'users.json',
