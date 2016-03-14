@@ -30,3 +30,31 @@ Mqtt Panel Dependencies:
 
 
 ![Diagram of MQTT setup](http://o7.no/1j7Yt61)
+
+
+INSRUCTIONS:
+
+first burn a image onto the beaglebone using flash instructions parentheses insert link here
+
+Set a new IP address to static one provided
+
+cd  /usr/lib/connman/test
+
+./set-ipv4-method ethernet_c8a030b7e29c_cacble manual 10.13.196.243 255.255.255.0 10.13.196.1
+
+reboot
+
+Supervisord
+
+Supervisorctl status
+
+
+
+Chad’s
+IP: 10.13.196.242
+
+Andy’s 
+IP: 10.13.196.243
+
+Lauren
+IP: Still need
