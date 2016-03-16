@@ -32,7 +32,7 @@ Mqtt Panel Dependencies:
 ![Diagram of MQTT setup](http://o7.no/1j7Yt61)
 
 
-INSRUCTIONS:
+INSTRUCTIONS:
 
 first burn a image onto the beaglebone using flash instructions parentheses insert link here
 
