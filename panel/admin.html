@@ -15,22 +15,43 @@
     <!-- socket.io for communication -->    
     <script type="text/javascript" src="js/socket.io.min.js"></script>
     <script type="text/javascript">
+      function getSearchParameters() {
+        var prmstr = window.location.search.substr(1);
+        return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : {};
+      }
+
+      function transformToAssocArray( prmstr ) {
+          var params = {};
+          var prmarr = prmstr.split("&");
+          for ( var i = 0; i < prmarr.length; i++) {
+              var tmparr = prmarr[i].split("=");
+              params[tmparr[0]] = tmparr[1];
+          }
+          return params;
+      }
+
+      var params = getSearchParameters();
+      var search = {};
+      search = params;
         var huddlerooms = [1,2];
         var socket = io.connect('http://solr.t1p1.com:3000');
         socket.on('connect', function () {
-          socket.emit("requestLogs");
+          socket.emit("requestLogs", search);
         });
         socket.on('logs', function (msg) {
           var logLen = msg.length;
           var buildHTML = "";
           for(var i = 0; i< logLen; ++i) {
             if(msg[i].type == "check_in") {
-              buildHTML += '<tr><td>'+msg[i].type+'</td><td>'+msg[i].room+'</td><td>'+msg[i].user+'</td><td>'+convertTime(msg[i].time)+'</td></tr>';
+              buildHTML += '<tr><td>'+msg[i].type+'</td><td>'+msg[i].room+'</td><td>'+sanitize(msg[i].user)+'</td><td>'+convertTime(msg[i].time)+'</td></tr>';
             } else if(msg[i].type == "room_update") {
               buildHTML += '<tr><td>'+msg[i].type+'</td><td>'+msg[i].room+'</td><td>'+msg[i].flag+'</td><td>'+convertTime(msg[i].time)+'</td></tr>';
             }
           }
           $("#logs").append(buildHTML);
+        });
+        socket.on('connect_error', function(a, b, c) {
+          $("#proxy-status").removeClass("label-success").addClass("label-danger").text("Offline");
         });
     function convertTime(timestamp) {
       var date = new Date(timestamp * 1000)
@@ -47,13 +68,26 @@
     function sanitize(input) {
       return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
     }
+    $(function() {
+      $.ajax({
+        url: "port_status.php",
+        dataType: "json"
+      }).done(function(data) {
+        if(data.proxy == "offline") {
+          $("#proxy-status").removeClass("label-success").addClass("label-danger").text("Offline");
+        }
+        if(data.broker == "offline") {
+          $("#broker-status").removeClass("label-success").addClass("label-danger").text("Offline");
+        }
+      });
+    });
     </script>
   </head>
 
   <body>
     <div id="wrap">
       <div class="container">
-        <div class="page-header"><h1><b>Huddle Rooms</b></h1></div>
+        <div class="page-header"><h1><b>Huddle Rooms</b></h1><div class="pull-right">MQTT Broker: <span id="broker-status" class="label-success label">Online</span> Node Proxy: <span class="label-success label" id="proxy-status">Online</span></div></div>
             <div class="panel">
             <div class="panel panel-default">
               <div class="panel-body">

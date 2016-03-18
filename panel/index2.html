@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Huddle Rooms</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+    <!-- socket.io for communication -->    
+    <script type="text/javascript" src="js/socket.io.min.js"></script>
+    <script type="text/javascript">
+        var users;
+        var roomStart = 10;
+        var huddlerooms = [1,2];
+        for(var roomStart = 10;roomStart<=40;++roomStart) {
+          huddlerooms.push(roomStart);
+        }
+        var lastVal = "";
+        var findCache;
+        function buildRooms(rooms) {
+          var huddlerooms = [1,2];
+          var buildHTML = "";
+          var features = "";
+          for(var total=rooms.rooms.length, i = 0;i < total;++i) {
+            huddlerooms.push({
+              id: rooms.rooms[i].internal_name,
+              name: rooms.rooms[i].display_name
+            });
+            if(rooms.rooms[i].override) {
+              features = "<li>"+rooms.rooms[i].override.join("</li><li>")+"</li>";
+            } else {
+              features = "<li>"+rooms.categories[rooms.rooms[i].category_id].features.join("</li><li>")+"</li>";
+            }
+            buildHTML += '<tr id="room-'+rooms.rooms[i].internal_name+'" class="category-'+rooms.rooms[i].category_id+'"><td width="20%" style="vertical-align:middle;"><h3>'+rooms.rooms[i].display_name+' - '+rooms.categories[rooms.rooms[i].category_id].display_name+'</h3><small class="log">(no value recieved)</small></td><td width="30%" class="features" style="vertical-align:middle;"><ul>'+features+'</ul></td><td class="users" style="vertical-align:middle;"><ul></ul></td><td width="30%" style="vertical-align:middle;"><h4>&nbsp;<span class="label">Unknown</span></h4></td></tr>';
+          }
+          $("#rooms").append(buildHTML);
+        }
+        $(function() {
+          var hLen = huddlerooms.length;
+          var buildHTML = "";
+          // Get rooms json and populate HTML
+          $.ajax({
+            url: 'rooms.json',
+            async: false,
+            dataType: 'json',
+            success: function (response) {
+              buildRooms(response);
+            }
+          });
+          // Get the users
+          $.ajax({
+            url: 'users.json',
+            async: false,
+            dataType: 'json',
+            success: function (response) {
+              users = response.users;
+              findCache = users;
+            }
+          });
+          $("#checkIn").submit(function(e) {
+            e.preventDefault();
+            var room = $("#room").val();
+            var user = $("#name").val();
+            socket.emit('checkIn', {room : room, user: user});
+            $("#room-"+room+" .users ul").append("<li>"+sanitize(user)+"</li>");
+          });
+          var $namesParent = $("#name").parent();
+          $namesParent.append('<ul class="filterResults"></ul>');
+          $('body').on('click','.filterResults li',function() {
+            $(this).parent().parent().find('input').val($(this).html());
+            $(this).parent().hide();
+          });
+          $("#name").blur(function() {
+            setTimeout(function(){
+              $("#name").parent().find('.filterResults').hide();
+            }, 250);
+            
+          });
+          $("#name").focus(function() {
+            $(this).parent().find('.filterResults').show();
+          });
+          $("#name").keyup(function ()
+          {
+            var val = $(this).val();
+            if(val.length < lastVal.length) findCache = users;
+            findCache = findCache.filter(function (element, index, array) {
+              return (element.toLowerCase().indexOf(val.toLowerCase()) > -1);
+            })
+            lastVal = val;
+            cacheLength = (findCache.length);
+            if(cacheLength > 10) cacheLength = 10;
+            $('.filterResults',$namesParent).html('');
+            for(var i = 0;i<cacheLength;++i) {
+              $('.filterResults',$namesParent).append('<li>'+findCache[i]+'</li>');
+            }
+          });
+          // Populate huddlerooms
+          var len = huddlerooms.length;
+          var toAppend = "";
+          for(var i = 0;i<len;++i) {
+            toAppend += '<option value="'+huddlerooms[i]+'"">'+huddlerooms[i]+'</option>'
+          }
+          $("#room").append(toAppend);
+        });
+        var socket = io.connect('http://solr.t1p1.com:3000');
+        socket.on('connect', function () {
+            $(".users ul").html("");
+            socket.emit('subscribe', {topic : 'rooms/#'});
+        });
+        socket.on('mqtt', function (msg) {
+                var message = msg.topic;
+                var timestamp = Math.round((new Date()).getTime() / 1000);
+                $('#topic').html(msg.topic);
+                $('#message').html(msg.topic + ', ' + msg.flag);
+                
+                $('#room-'+msg.topic+' .log').html('(Switch value: ' + msg.flag + ')');
+                if (msg.flag == 2) {
+                    $('#room-'+msg.topic+' .label').text('Occupied');
+                    $('#room-'+msg.topic+' .label').removeClass('label-warning label-danger').addClass('label-success');
+                } else if(msg.flag == 1) {
+                    $('#room-'+msg.topic+' .label').text('Purgatory');
+                    $('#room-'+msg.topic+' .label').removeClass('label-danger label-success').addClass('label-warning');
+                } else {
+                    $("#room-"+msg.topic+" .users ul").html("");
+                    $('#room-'+msg.topic+' .label').text('Vacant');
+                    $('#room-'+msg.topic+' .label').removeClass('label-warning label-success').addClass('label-danger');
+                }
+            });
+        socket.on('checkin', function (msg) {
+          $("#room-"+msg.room+" .users ul").append("<li>"+sanitize(msg.user)+"</li>");
+        });
+    function sanitize(input) {
+      return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
+    </script>
+    <style>
+      .searchBox {
+        display: inline-block;
+      }
+      .filterResults {
+        position: absolute;
+        width: 250px;
+        background: #ccc;
+        list-style: none;
+      }
+
+      .filterResults li {
+        padding: 5px;
+      }
+
+      .filterResults li:hover {
+        background: #eee;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="wrap">
+      <div class="container">
+        <div class="page-header"><h1><b>Huddle Rooms</b></h1></div>
+            <div class="panel">
+              <form id="checkIn">
+              <select id="room">
+                <option value="false">Select Room</option>
+              </select>
+              <div class="searchBox"><input type="text" id="name" placeholder="Name..." autocomplete="off" /></div>
+              <input type="submit" value="Check In" />
+            </div>
+            <div class="panel panel-default">
+              <div class="panel-body">
+                    <table id="rooms" class="table table-striped">
+                    </table>
+              </div>
+            </div>
+          <div class="panel panel-default">
+            <div class="panel-body">
+                    <b>Latest MQTT message:  </b> <small id="message">no message recieved</small>
+            </div>
+          </div>
+
+  </body>
+</html>

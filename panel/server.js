@@ -17,7 +17,7 @@ var mqttport = 1883;
 var mqttclient = mqtt.createClient(mqttport, mqttbroker);
 mqttclient.subscribe("rooms/#");
 // Reduce socket.io debug output
-io.set('log level', 0)
+io.set('log level', 0);
 
 // Application loop to check for vacant rooms
 function app_loop(){
@@ -25,15 +25,15 @@ function app_loop(){
         var time = Math.round(Date.now()/1000);
         db.rooms.find({flag:{$ne:0}}, function(err,result) {
             result.forEach(function(err,room){
-                if(time - result[room].time > 600 && result[room].flag > 0) {
+                if(time - result[room].time > 180 && result[room].flag > 0) {
                     updateRoom(result[room].room, 0);
-                } else if(time - result[room].time > 300 && result[room].flag == 2) {
+                } else if(time - result[room].time > 150 && result[room].flag == 2) {
                     updateRoom(result[room].room, 1);
                 }
             });
         });
         app_loop();
-   }, 60000);
+   }, 1000);
 }
 app_loop();
 
@@ -44,18 +44,19 @@ function updateRoom(room, flag) {
     }
     var time = Math.round(Date.now()/1000);
     db.rooms.findOne({room: room}, function(err,result) {
-        if(result.flag != flag) {
+        if(result == undefined || result.flag != flag) {
             db.logs.insert({type:"room_update",room: room, flag: flag, time: time});
+            // Only send it to the client if it changes
+            io.sockets.emit('mqtt',
+                {'topic'  : room,
+                 'flag' : flag
+                }
+            );
         }
         if(flag == 2) 
             db.rooms.update({room: room}, {$set:{flag:flag, time: time}}, {upsert:true});
         else
             db.rooms.update({room: room}, {$set:{flag:flag}}, {upsert:true});
-        io.sockets.emit('mqtt',
-            {'topic'  : room,
-             'flag' : flag
-            }
-        );
     })
 }
 
@@ -77,7 +78,17 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('requestLogs', function (data) {
         var pastDay = Math.round(Date.now()/1000)-86400;
-        db.logs.find({time : {$gt:pastDay}}, function(err,result) {
+        data.time = {$gt:pastDay}
+        db.logs.find(data, function(err,result) {
+            socket.emit('logs',
+                result
+            );
+        });
+    });
+    socket.on('requestLogsWeek', function (data) {
+        var pastWeek = Math.round(Date.now()/1000)-604800;
+        data.time = {$gt:pastWeek}
+        db.logs.find(data, function(err,result) {
             socket.emit('logs',
                 result
             );

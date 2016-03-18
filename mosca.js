@@ -15,5 +15,5 @@ function setup() {
 
 // fired when a message is published
 server.on('published', function(packet, client) {
-  console.log('Published', packet.payload);
+  console.log('Published', packet.topic, packet.payload.toString('utf-8'));
 });

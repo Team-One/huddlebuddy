@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Huddle Rooms</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+    <!-- socket.io for communication -->    
+    <script type="text/javascript" src="js/socket.io.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1-beta.2/Chart.min.js"></script>
+    <script type="text/javascript">
+      function getSearchParameters() {
+        var prmstr = window.location.search.substr(1);
+        return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : {};
+      }
+
+      function transformToAssocArray( prmstr ) {
+          var params = {};
+          var prmarr = prmstr.split("&");
+          for ( var i = 0; i < prmarr.length; i++) {
+              var tmparr = prmarr[i].split("=");
+              params[tmparr[0]] = tmparr[1];
+          }
+          return params;
+      }
+
+      var params = getSearchParameters();
+      var search = {};
+      search = params;
+      search.flag = 2;
+        var socket = io.connect('http://solr.t1p1.com:3000');
+        socket.on('connect', function () {
+          socket.emit("requestLogsWeek", search);
+        });
+        var logType = 1;
+        socket.on('logs', function (msg) {
+          var logLen = msg.length;
+          var buildHTML = "";
+          var fullDayStats = {};
+          var beforeTwoStats = {};
+          var afterTwoStats = {};
+          var afterNineStats = {};
+          for(var i = 0; i< logLen; ++i) {
+              if(fullDayStats[msg[i].room] == undefined) fullDayStats[msg[i].room] = 0;
+              fullDayStats[msg[i].room]++;
+              var hour = getHour(msg[i].time);
+              if(hour < 14) {
+                if(beforeTwoStats[msg[i].room] == undefined) beforeTwoStats[msg[i].room] = 0;
+                beforeTwoStats[msg[i].room]++;
+              } else {
+                if(afterTwoStats[msg[i].room] == undefined) afterTwoStats[msg[i].room] = 0;
+                afterTwoStats[msg[i].room]++;
+              }
+              if(hour > 21) {
+                if(afterNineStats[msg[i].room] == undefined) afterNineStats[msg[i].room] = 0;
+                afterNineStats[msg[i].room]++;
+              }
+          }
+          var fullDaySorted = [];
+          for (var room in fullDayStats)
+            fullDaySorted.push([room, fullDayStats[room]])
+          fullDaySorted.sort(function(a, b) {return a[1] - b[1]})
+
+          var beforeTwoSorted = [];
+          for (var room in beforeTwoStats)
+            beforeTwoSorted.push([room, beforeTwoStats[room]])
+          beforeTwoSorted.sort(function(a, b) {return a[1] - b[1]})
+
+          var afterTwoSorted = [];
+          for (var room in afterTwoStats)
+            afterTwoSorted.push([room, afterTwoStats[room]])
+          afterTwoSorted.sort(function(a, b) {return a[1] - b[1]})
+
+          var afterNineSorted = [];
+          for (var room in afterNineStats)
+            afterNineSorted.push([room, afterNineStats[room]])
+          afterNineSorted.sort(function(a, b) {return a[1] - b[1]})
+
+          var fullDayLabels = [];
+          var fullDayData = [];
+
+          var timeUsedLabels = [];
+          var timeUsedData = [];
+
+          var beforeTwoLabels = [];
+          var beforeTwoData = [];
+
+          var afterTwoLabels = [];
+          var afterTwoData = [];
+
+          var afterNineLabels = [];
+          var afterNineData = [];
+          for(var i=0,l=fullDaySorted.length;i<l;i++) {
+            fullDayLabels.push(fullDaySorted[i][0]);
+            fullDayData.push(fullDaySorted[i][1]);
+          }
+
+          for(var i=0,l=beforeTwoSorted.length;i<l;i++) {
+            beforeTwoLabels.push(beforeTwoSorted[i][0]);
+            beforeTwoData.push(beforeTwoSorted[i][1]);
+          }
+
+          for(var i=0,l=afterTwoSorted.length;i<l;i++) {
+            afterTwoLabels.push(afterTwoSorted[i][0]);
+            afterTwoData.push(afterTwoSorted[i][1]);
+          }
+
+          for(var i=0,l=afterNineSorted.length;i<l;i++) {
+            afterNineLabels.push(afterNineSorted[i][0]);
+            afterNineData.push(afterNineSorted[i][1]);
+          }
+          var fullDayBarChartData = {
+            labels : fullDayLabels,
+            datasets : [
+             {
+              fillColor : "rgba(220,220,220,0.5)",
+              strokeColor : "rgba(220,220,220,0.8)",
+              highlightFill: "rgba(220,220,220,0.75)",
+              highlightStroke: "rgba(220,220,220,1)",
+              data : fullDayData
+              }
+            ],
+          }
+          var ctx = document.getElementById("fullDay").getContext("2d");
+          window.fullDay = new Chart(ctx).Bar(fullDayBarChartData, {
+            responsive : true,
+            showTooltip: true,
+            tooltipTemplate: "<%= value %>"
+          });
+
+          var fullDayBarChartData = {
+            labels : beforeTwoLabels,
+            datasets : [
+             {
+              fillColor : "rgba(220,220,220,0.5)",
+              strokeColor : "rgba(220,220,220,0.8)",
+              highlightFill: "rgba(220,220,220,0.75)",
+              highlightStroke: "rgba(220,220,220,1)",
+              data : beforeTwoData
+              }
+            ],
+          }
+          var ctx = document.getElementById("beforeTwo").getContext("2d");
+          window.beforeTwo = new Chart(ctx).Bar(fullDayBarChartData, {
+            responsive : true,
+            showTooltip: true,
+            tooltipTemplate: "<%= value %>"
+          });
+
+          var fullDayBarChartData = {
+            labels : afterTwoLabels,
+            datasets : [
+             {
+              fillColor : "rgba(220,220,220,0.5)",
+              strokeColor : "rgba(220,220,220,0.8)",
+              highlightFill: "rgba(220,220,220,0.75)",
+              highlightStroke: "rgba(220,220,220,1)",
+              data : afterTwoData
+              }
+            ],
+          }
+          var ctx = document.getElementById("afterTwo").getContext("2d");
+          window.afterTwo = new Chart(ctx).Bar(fullDayBarChartData, {
+            responsive : true,
+            showTooltip: true,
+            tooltipTemplate: "<%= value %>"
+          });
+
+          var fullDayBarChartData = {
+            labels : afterNineLabels,
+            datasets : [
+             {
+              fillColor : "rgba(220,220,220,0.5)",
+              strokeColor : "rgba(220,220,220,0.8)",
+              highlightFill: "rgba(220,220,220,0.75)",
+              highlightStroke: "rgba(220,220,220,1)",
+              data : afterNineData
+              }
+            ],
+          }
+          var ctx = document.getElementById("afterNine").getContext("2d");
+          window.afterNine = new Chart(ctx).Bar(fullDayBarChartData, {
+            responsive : true,
+            showTooltip: true,
+            tooltipTemplate: "<%= value %>"
+          });
+          //socket.emit("requestLogsWeek", search);
+        });
+    function convertTime(timestamp) {
+      var date = new Date(timestamp * 1000)
+      , datevalues = [
+             date.getFullYear()
+            ,date.getMonth()+1
+            ,date.getDate()
+            ,date.getHours()
+            ,date.getMinutes()
+            ,date.getSeconds()
+         ];
+      return datevalues[1]+'/'+datevalues[2]+'/'+datevalues[0]+' '+datevalues[3]+':'+datevalues[4]+':'+datevalues[5];
+    }
+    function getHour(timestamp) {
+      var date = new Date(timestamp * 1000)
+      return date.getHours();
+    }
+    function sanitize(input) {
+      return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
+    </script>
+  </head>
+
+  <body>
+    <div id="wrap">
+      <div class="container">
+        <div class="page-header"><h1><b>Huddle Rooms</b></h1></div>
+            <div class="panel">
+            <div class="panel panel-default">
+              <div class="panel-body">
+                  <h2>Full Day</h2>
+                    <div style="width: 50%">
+                     <canvas id="fullDay" height="450" width="600"></canvas>
+                    </div>
+                  <!-- <h2>Time in Use</h2>
+                    <div style="width: 50%">
+                     <canvas id="timeInUse" height="450" width="600"></canvas>
+                    </div> -->
+                  <h2>Before 2PM</h2>
+                    <div style="width: 50%">
+                     <canvas id="beforeTwo" height="450" width="600"></canvas>
+                    </div>
+                  <h2>After 2PM</h2>
+                    <div style="width: 50%">
+                     <canvas id="afterTwo" height="450" width="600"></canvas>
+                    </div>
+                  <h2>After 9PM</h2>
+                    <div style="width: 50%">
+                     <canvas id="afterNine" height="450" width="600"></canvas>
+                    </div>
+
+              </div>
+            </div>
+          <div class="panel panel-default">
+            <div class="panel-body">
+                    <b>Latest MQTT message:  </b> <small id="message">no message recieved</small>
+            </div>
+          </div>
+
+  </body>
+</html>
