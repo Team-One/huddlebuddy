@@ -12,6 +12,9 @@ var db = require("mongojs").connect(databaseUrl, collections);
 var io = socket.listen(3000);
 var mqttbroker = 'localhost';
 var mqttport = 1883;
+var Mixpanel = require('mixpanel');
+var mixpanel = Mixpanel.init('c97d50704710587b31edfd5fa0cabe06');
+mixpanel.track("Server started");
 //var mqttbroker = 'localhost';
 //var mqttport = '1883';
 var mqttclient = mqtt.createClient(mqttport, mqttbroker);
@@ -53,7 +56,7 @@ function updateRoom(room, flag) {
                 }
             );
         }
-        if(flag == 2) 
+        if(flag == 2)
             db.rooms.update({room: room}, {$set:{flag:flag, time: time}}, {upsert:true});
         else
             db.rooms.update({room: room}, {$set:{flag:flag}}, {upsert:true});
@@ -75,6 +78,9 @@ io.sockets.on('connection', function (socket) {
             }
         );
         mqttclient.publish('rooms/'+data.room, 'true');
+        mixpanel.track("Human Check-in", {room: data.room, user:data.user});
+        mixpanel.people.set(data.user, {room: data.room});
+        mixpanel.people.increment(data.user, data.room, 1);        
     });
     socket.on('requestLogs', function (data) {
         var pastDay = Math.round(Date.now()/1000)-86400;
@@ -124,4 +130,5 @@ mqttclient.on('message', function(topic, payload) {
         var flag = 2;
     }
     updateRoom(room, flag);
+    mixpanel.track("Motion Check-in", {room: room.data,});
 });
