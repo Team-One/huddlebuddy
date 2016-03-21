@@ -50,6 +50,7 @@ function updateRoom(room, flag) {
         if(result == undefined || result.flag != flag) {
             db.logs.insert({type:"room_update",room: room, flag: flag, time: time});
             // Only send it to the client if it changes
+            mixpanel.track("Motion Check-in", {room: room,});
             io.sockets.emit('mqtt',
                 {'topic'  : room,
                  'flag' : flag
@@ -130,5 +131,4 @@ mqttclient.on('message', function(topic, payload) {
         var flag = 2;
     }
     updateRoom(room, flag);
-    //mixpanel.track("Motion Check-in", {room: room,});
 });
