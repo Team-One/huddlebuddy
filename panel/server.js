@@ -130,5 +130,5 @@ mqttclient.on('message', function(topic, payload) {
         var flag = 2;
     }
     updateRoom(room, flag);
-    mixpanel.track("Motion Check-in", {room: room.data,});
+    //mixpanel.track("Motion Check-in", {room: room,});
 });
