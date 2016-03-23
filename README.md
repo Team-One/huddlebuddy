@@ -34,27 +34,44 @@ Mqtt Panel Dependencies:
 
 INSTRUCTIONS:
 
-first burn a image onto the beaglebone using flash instructions parentheses insert link here
+1. Burn a image onto the beaglebone using flash instructions (insert link)
 
-Set a new IP address to static one provided
+2. Set a new IP address to static one provided
 
-cd  /usr/lib/connman/test
+----------
 
-./set-ipv4-method ethernet_c8a030b7e29c_cacble manual 10.13.196.243 255.255.255.0 10.13.196.1
+3. cd  /usr/lib/connman/test
 
-reboot
+4. Setting IP, Subnet, Router IP- ./set-ipv4-method ethernet_c8a030b7e29c_cacble manual 10.13.196.243 255.255.255.0 10.13.196.1
 
-Supervisord
+5. Check to see if internet is up. If not "reboot" in Terminal
 
-Supervisorctl status
+6. Run "Supervisord" in Terminal
+
+7. Run "Supervisorctl status" in Terminal
 
 
 
-Chad’s
+North West- Chad Bouer
 IP: 10.13.196.242
+Subnet: 255.255.255.0
+Router IP:
 
-Andy’s 
-IP: 10.13.196.243
+South Side- Ben Fong
+IP: 10.13.200.243
+Subnet: 255.255.255.0
+Router: 10.13.200.1
 
-Lauren
-IP: Still need
+North East- Lauren
+IP:     10.13.198.116
+Subnet: 255.255.255.0
+Router: 10.13.198.1
+
+
+Updating PyBBIO
+
+I am working as fast as I can to add support for many of the features that the BeableBone's AM335x processor has to offer, so you'll want to make sure your version is up to date.
+
+To make sure you have the latest stable release:
+
+# pip install --upgrade PyBBIO
