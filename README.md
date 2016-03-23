@@ -1,9 +1,9 @@
-huddlebuddy
+#Huddle Rooms
 ===========
 
-Huddle Room state detection in real-time, Powered by MQTT, Node, & Socket.io
+##Huddle Room state detection in real-time, Powered by MQTT, Node, & Socket.io
 
-
+###Broker Setup
 Install Mosca [Mcollina/mosca](https://github.com/mcollina/mosca) (a Node.js MQTT Broker):
 ``` npm install mosca``` 
 
@@ -18,20 +18,17 @@ Our node.js server is running localhost socket for web clients to connect to. In
 
 and here's our MQTT topic subscription: ``` socket.emit('subscribe', {topic : 'home/#'});```
 
+###Front End web app
 Next we'll install the Node.js based web browser client to subscribe and display the state of the Huddlerooms.
-
 https://github.com/fabaff/mqtt-panel
 
 Mqtt Panel Dependencies:
 * node.js
 * mqtt
 * socket.io
-
-
-
 ![Diagram of MQTT setup](http://o7.no/1j7Yt61)
 
-
+###Beagle Bone Black Setup (Gateways)
 INSTRUCTIONS:
 
 1. Burn a image onto the beaglebone using flash instructions (insert link)
@@ -68,10 +65,7 @@ Subnet: 255.255.255.0
 Router: 10.13.198.1
 
 
-Updating PyBBIO
+ ####Updating PyBBIO
 
-I am working as fast as I can to add support for many of the features that the BeableBone's AM335x processor has to offer, so you'll want to make sure your version is up to date.
 
-To make sure you have the latest stable release:
-
-# pip install --upgrade PyBBIO
+```pip install --upgrade PyBBIO```
