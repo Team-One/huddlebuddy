@@ -50,7 +50,7 @@ function updateRoom(room, flag) {
         if(result == undefined || result.flag != flag) {
             db.logs.insert({type:"room_update",room: room, flag: flag, time: time});
             // Only send it to the client if it changes
-            realroom = room - 9;
+            var realroom = Math.subtract(data.room , 9);
             mixpanel.track("Motion Check-in", {room: realroom,});
             io.sockets.emit('mqtt',
                 {'topic'  : room,
@@ -80,6 +80,7 @@ io.sockets.on('connection', function (socket) {
             }
         );
         mqttclient.publish('rooms/'+data.room, 'true');
+        var realroom = Math.subtract(data.room , 9);
         mixpanel.track("Human Check-in", {room: realroom, user:data.user});
         mixpanel.people.set(data.user, {room: realroom});
         mixpanel.people.increment(data.user, realroom, 1);        
