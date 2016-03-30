@@ -50,7 +50,8 @@ function updateRoom(room, flag) {
         if(result == undefined || result.flag != flag) {
             db.logs.insert({type:"room_update",room: room, flag: flag, time: time});
             // Only send it to the client if it changes
-            mixpanel.track("Motion Check-in", {room: room,});
+            realroom = room - 9;
+            mixpanel.track("Motion Check-in", {room: realroom,});
             io.sockets.emit('mqtt',
                 {'topic'  : room,
                  'flag' : flag
@@ -79,9 +80,9 @@ io.sockets.on('connection', function (socket) {
             }
         );
         mqttclient.publish('rooms/'+data.room, 'true');
-        mixpanel.track("Human Check-in", {room: data.room, user:data.user});
-        mixpanel.people.set(data.user, {room: data.room});
-        mixpanel.people.increment(data.user, data.room, 1);        
+        mixpanel.track("Human Check-in", {room: realroom, user:data.user});
+        mixpanel.people.set(data.user, {room: realroom});
+        mixpanel.people.increment(data.user, realroom, 1);        
     });
     socket.on('requestLogs', function (data) {
         var pastDay = Math.round(Date.now()/1000)-86400;
